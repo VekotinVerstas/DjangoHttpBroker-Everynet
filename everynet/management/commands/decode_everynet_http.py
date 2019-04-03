@@ -55,13 +55,20 @@ class Command(RabbitCommand):
     help = 'Decode everynet'
 
     def add_arguments(self, parser):
-        # parser.add_argument('keys', nargs='+', type=str)
+        parser.add_argument('--prefix', type=str,
+                            help='queue and routing_key prefix, overrides settings.ROUTING_KEY_PREFIX')
         super().add_arguments(parser)
-        pass
 
     def handle(self, *args, **options):
+        logger.info(f'Start handling {__name__}')
+        name = 'everynet'
+        # FIXME: constructing options should be in a function in broker.utils
+        if options["prefix"] is None:
+            prefix = settings.RABBITMQ["ROUTING_KEY_PREFIX"]
+        else:
+            prefix = options["prefix"]
         options['exchange'] = settings.RAW_HTTP_EXCHANGE
-        options['routing_key'] = f'{settings.RABBITMQ["ROUTING_KEY_PREFIX"]}.everynet.#'
-        options['queue'] = 'decode_thingpark_http_queue'
+        options['routing_key'] = f'{prefix}.{name}.#'
+        options['queue'] = f'{prefix}_decode_{name}_http_queue'
         options['consumer_callback'] = consumer_callback
         super().handle(*args, **options)
